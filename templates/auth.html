@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Register' if mode == 'register' else 'Login' }} - Mather{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .auth-wrap { max-width: 380px; margin: 40px auto 0; }
+
+  .auth-switch {
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .auth-switch a { color: var(--accent); text-decoration: none; }
+  .auth-switch a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <h1>{% if mode == 'register' %}Create account{% else %}Welcome back{% endif %}</h1>
+  <p class="text-muted mb-4" style="font-size:13px">
+    {% if mode == 'register' %}start solving problems{% else %}sign in to continue{% endif %}
+  </p>
+
+  <div class="card">
+    <form method="POST">
+      <label class="form-label" for="username">username</label>
+      <input class="form-control" type="text" id="username" name="username" autocomplete="username" autofocus>
+
+      <label class="form-label" for="password">password</label>
+      <input class="form-control" type="password" id="password" name="password"
+             autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}">
+
+      <div class="d-flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">
+          {{ 'register' if mode == 'register' else 'login' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="auth-switch">
+    {% if mode == 'register' %}
+      already have an account? <a href="{{ url_for('login') }}">login</a>
+    {% else %}
+      no account? <a href="{{ url_for('register') }}">register</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

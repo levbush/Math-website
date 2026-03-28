@@ -1,51 +1,80 @@
-import sqlite3
-import pickle
-from config import DB_PATH, DEFAULT_DATA, Data
-# from cachetools import TTLCache
+from sqlalchemy import create_engine, Column, String, Integer, JSON
+from sqlalchemy.orm import declarative_base, Session
+from werkzeug.security import generate_password_hash, check_password_hash
+from config import DB_PATH, SUBJECTS
+
+engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)
+
+Base = declarative_base()
 
 
-def get_conn(row_factory=False):
-    conn = sqlite3.connect(DB_PATH)
-    if row_factory:
-        conn.row_factory = sqlite3.Row
-    return conn
+class User(Base):
+    __tablename__ = 'users'
+
+    uid = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String, nullable=False)
+    password_hash = Column(String, nullable=False)
+    solved = Column(JSON, nullable=False, default=list)
+    stats = Column(JSON, nullable=False, default=dict)
 
 
-def init_dbs():
-    conn = get_conn()
-    c = conn.cursor()
-
-    c.execute(
-        '''CREATE TABLE IF NOT EXISTS user_data (
-            uid PRIMARY KEY,
-            data BINARY
-    )'''
-    )
-
-    conn.commit()
-    conn.close()
+def init_db():
+    Base.metadata.create_all(engine)
 
 
-def get_data(uid: int) -> Data:
-    conn = get_conn()
-    c = conn.cursor()
-    data = c.execute('SELECT data from user_data WHERE uid = ?', (uid,)).fetchone()
-    if data is None:
-        return DEFAULT_DATA
-    data = data[0]
-    data = pickle.loads(data)
-    if not isinstance(data, Data):
-        return DEFAULT_DATA
-    return data
+def _default_stats():
+    return {key: 0 for key in SUBJECTS + [str(d) for d in range(1, 11)]}
 
 
-def save_data(uid: int, data: Data):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute('INSERT OR REPLACE INTO user_data VALUES (?, ?)', (uid, pickle.dumps(data)))
-    conn.commit()
-    conn.close()
+def register_user(username: str, password: str) -> bool:
+    with Session(engine) as s:
+        if s.get(User, username):
+            return False
+        s.add(User(
+            username=username,
+            password_hash=generate_password_hash(password),
+            solved=[],
+            stats=_default_stats(),
+        ))
+        s.commit()
+        return True
 
 
-def get_stats(uid: int):
-    return get_data(uid).stats
+def check_user(username: str, password: str) -> bool:
+    with Session(engine) as s:
+        user = s.get(User, username)
+        if not user:
+            return False
+        return check_password_hash(user.password_hash, password)
+
+
+def get_solved(username: str) -> set:
+    with Session(engine) as s:
+        user = s.get(User, username)
+        if not user:
+            return set()
+        return set(user.solved)
+
+
+def get_stats(username: str) -> dict:
+    with Session(engine) as s:
+        user = s.get(User, username)
+        if not user:
+            return _default_stats()
+        return user.stats
+
+
+def mark_solved(username: str, problem_id: str, subject: str, difficulty: int):
+    with Session(engine) as s:
+        user = s.get(User, username)
+        if not user:
+            return
+        solved = list(user.solved)
+        if problem_id not in solved:
+            solved.append(problem_id)
+        stats = dict(user.stats)
+        stats[subject] = stats.get(subject, 0) + 1
+        stats[str(difficulty)] = stats.get(str(difficulty), 0) + 1
+        user.solved = solved
+        user.stats = stats
+        s.commit()

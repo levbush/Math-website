@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% block title %}Problem - Mather{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .problem-text {
+    font-family: 'Instrument Serif', serif;
+    font-size: 20px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .format-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+
+  .format-box strong { color: var(--text); }
+
+  .answer-area {
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 80px;
+    box-shadow: none !important;
+  }
+
+  .answer-area:focus { border-color: var(--accent) !important; }
+
+  .btn-ai {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .btn-ai:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ai.active { border-color: var(--accent); color: var(--accent); }
+  .btn-ai:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .ai-panel { display: none; }
+  .ai-panel.visible { display: block; }
+
+  .ai-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-dim);
+    margin-bottom: 12px;
+  }
+
+  .ai-response { font-size: 15px; line-height: 1.75; color: var(--text); }
+  .ai-response p { margin-bottom: 10px; }
+  .ai-response p:last-child { margin-bottom: 0; }
+  .ai-response ul, .ai-response ol { padding-left: 20px; margin-bottom: 10px; }
+  .ai-response li { margin-bottom: 4px; }
+  .ai-response strong { color: var(--accent); font-weight: 500; }
+  .ai-response code {
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    background: var(--bg); border: 1px solid var(--border);
+    padding: 1px 5px; border-radius: 2px;
+  }
+  .ai-response pre {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 3px; padding: 12px; overflow-x: auto; margin-bottom: 10px;
+  }
+  .ai-response pre code { background: none; border: none; padding: 0; }
+
+  .check-correct { color: #7dcf7d; }
+  .check-wrong { color: var(--danger); }
+
+  .ai-cursor {
+    display: inline-block; width: 2px; height: 1em;
+    background: var(--accent); vertical-align: text-bottom;
+    animation: blink 0.9s step-end infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .solution-label {
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted); margin-bottom: 14px;
+  }
+
+  .solution-text { font-size: 15px; line-height: 1.75; color: var(--text); }
+  .solution-text p { margin-bottom: 10px; }
+  .solution-text ul, .solution-text ol { padding-left: 20px; margin-bottom: 10px; }
+  .solution-text strong { color: var(--accent); font-weight: 500; }
+  .solution-text code {
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    background: var(--bg); border: 1px solid var(--border);
+    padding: 1px 5px; border-radius: 2px;
+  }
+
+  .extracted-answer {
+    margin-top: 16px; background: #0e1a0a;
+    border: 1px solid #2a4020; border-radius: 3px; padding: 12px 16px;
+  }
+
+  .extracted-label {
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--accent-dim); margin-bottom: 4px;
+  }
+
+  .extracted-value { color: var(--accent); font-size: 15px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <span class="badge" style="background:var(--bg);border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-weight:400;font-size:12px;padding:5px 12px">
+      subject <span style="color:var(--accent);margin-left:6px">{{ problem.subject }}</span>
+    </span>
+    <span class="badge" style="background:var(--bg);border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-weight:400;font-size:12px;padding:5px 12px">
+      difficulty <span style="color:var(--accent);margin-left:6px">{{ problem.difficulty }}</span>
+    </span>
+     <span class="badge" style="background:var(--bg);border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-weight:400;font-size:12px;padding:5px 12px">
+      source <span style="color:var(--accent);margin-left:6px">{{ problem.source }}</span>
+    </span>
+  </div>
+
+  <div class="problem-text" id="problem-text" data-raw="{{ problem.question
+  | replace('[', '$$ ')
+  | replace(']', ' $$')
+  | e }}"></div>
+
+  <div class="format-box">
+    <strong>Answer format:</strong> {{ problem.format }}
+  </div>
+
+  <label class="form-label" for="answer">your answer</label>
+  <textarea class="form-control answer-area" id="answer" placeholder="type your answer or working here..."></textarea>
+
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <button class="btn-ai" data-mode="check">check answer</button>
+    <button class="btn-ai" data-mode="hint">hint</button>
+    <button class="btn-ai" data-mode="steps">step-by-step</button>
+    <button class="btn-ai" data-mode="explain">explain solution</button>
+  </div>
+
+  <div class="ai-panel mt-4 pt-4" id="ai-panel" style="border-top:1px solid var(--border)">
+    <div class="ai-label" id="ai-label">response</div>
+    <div class="ai-response" id="ai-response"></div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 align-items-center mt-4">
+    <form method="POST" action="{{ url_for('problem_confirm') }}" style="margin:0">
+      <button type="submit" class="btn btn-primary" id="confirm-btn" disabled title="Check your answer first">
+        mark as solved
+      </button>
+    </form>
+    <a href="{{ url_for('problem_more') }}" class="btn btn-outline-secondary">next -></a>
+    <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary"><- back</a>
+  </div>
+</div>
+
+<script>
+function typeset(el) {
+  if (!window.MathJax) return;
+  const ready = MathJax.startup?.promise ?? Promise.resolve();
+  ready.then(() => MathJax.typesetPromise([el])).catch(() => {});
+}
+
+function renderMarkdown(el, text) {
+  text = text.replace(/(\$\$[\s\S]*?\$\$)/g, '\n\n$1\n\n');
+  const encoded = text.replace(/\$\$[\s\S]*?\$\$|\$[^$\n]*?\$/g, m => {
+    return '\x00' + btoa(unescape(encodeURIComponent(m))) + '\x00';
+  });
+  let html = marked.parse(encoded, { breaks: true });
+  html = html.replace(/\x00([A-Za-z0-9+/=]+)\x00/g, (_, b64) => {
+    return decodeURIComponent(escape(atob(b64)));
+  });
+  el.innerHTML = html;
+  typeset(el);
+}
+
+const problemEl = document.getElementById('problem-text');
+if (problemEl) renderMarkdown(problemEl, problemEl.dataset.raw);
+
+const buttons = document.querySelectorAll('.btn-ai');
+const panel = document.getElementById('ai-panel');
+const label = document.getElementById('ai-label');
+const responseEl = document.getElementById('ai-response');
+const confirmBtn = document.getElementById('confirm-btn');
+
+const modeLabels = { check: 'answer check', hint: 'hint', steps: 'step-by-step', explain: 'explanation' };
+
+buttons.forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const mode = btn.dataset.mode;
+    const answer = document.getElementById('answer').value.trim();
+
+    buttons.forEach(b => { b.disabled = true; b.classList.remove('active'); });
+    btn.classList.add('active');
+    panel.classList.add('visible');
+    label.textContent = modeLabels[mode];
+    responseEl.className = 'ai-response';
+    responseEl.innerHTML = '<span class="ai-cursor"></span>';
+
+    const body = new FormData();
+    body.append('mode', mode);
+    body.append('answer', answer);
+
+    try {
+      const res = await fetch('/problem/ai', { method: 'POST', body });
+      const data = await res.json();
+
+      if (res.status === 429) {
+        const mins = Math.ceil(data.wait / 60);
+        panel.classList.remove('visible');
+        showToast(`Too many requests - please wait ${mins} minute${mins !== 1 ? 's' : ''} before asking again.`);
+        return;
+      }
+
+      if (!res.ok || data.error) {
+        responseEl.textContent = data.error || 'Request failed.';
+        return;
+      }
+
+      if (mode === 'check') {
+        renderMarkdown(responseEl, data.text);
+        if (data.verdict === 'CORRECT') {
+          responseEl.classList.add('check-correct');
+          if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.title = ''; }
+        } else if (data.verdict === 'INCORRECT') {
+          responseEl.classList.add('check-wrong');
+        }
+      } else {
+        renderMarkdown(responseEl, data.text);
+      }
+
+    } catch (e) {
+      responseEl.textContent = 'Request failed.';
+    } finally {
+      buttons.forEach(b => { b.disabled = false; });
+      btn.classList.remove('active');
+    }
+  });
+});
+</script>
+{% endblock %}
