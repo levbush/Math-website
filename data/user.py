@@ -19,7 +19,7 @@ class User(SqlAlchemyBase, UserMixin):
     stats = sa.Column(sa.JSON, nullable=False, default=dict)
 
     @classmethod
-    def register(cls, username: str, password: str) -> 'User' | None:
+    def register(cls, username: str, password: str):
         with create_session() as s:
             if s.query(cls).filter_by(username=username).first():
                 return None
@@ -35,17 +35,17 @@ class User(SqlAlchemyBase, UserMixin):
             return user
 
     @classmethod
-    def get_by_id(cls, user_id: int) -> 'User' | None:
+    def get_by_id(cls, user_id: int):
         with create_session() as s:
             return s.get(cls, user_id)
 
     @classmethod
-    def get_by_username(cls, username: str) -> 'User' | None:
+    def get_by_username(cls, username: str):
         with create_session() as s:
             return s.query(cls).filter_by(username=username).first()
 
     @classmethod
-    def authenticate(cls, username: str, password: str) -> 'User' | None:
+    def authenticate(cls, username: str, password: str):
         user = cls.get_by_username(username)
         if not user or not check_password_hash(user.password_hash, password):
             return None
