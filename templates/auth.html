@@ -2,7 +2,7 @@
 {% block title %}{{ 'Register' if mode == 'register' else 'Login' }} - Mather{% endblock %}
 
 {% block extra_styles %}
-<link rel="stylesheet" href="../static/css/auth.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 {% endblock %}
 
 {% block content %}
