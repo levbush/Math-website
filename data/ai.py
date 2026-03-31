@@ -1,7 +1,7 @@
 import re
 import requests
 import os
-from config import Translator, lang
+from config import translator, lang
 
 MODEL = 'Qwen/Qwen2.5-72B-Instruct'
 API_URL = 'https://router.huggingface.co/v1/chat/completions'
@@ -12,6 +12,16 @@ HF_API_KEY = os.environ.get('HF_API_KEY', '')
 class NoKeyError(Exception): ...
 class InvalidKeyError(Exception): ...
 
+
+def _translate_prompt(prompt: str) -> str:
+    try:
+        original_prompt = prompt
+        translated_prompt = translator.run(original_prompt)
+        
+        return translated_prompt
+    except Exception as e:
+        print(e)
+        return prompt
 
 def _query(messages: list, max_tokens=1024, temperature=0.6) -> str:
     if not HF_API_KEY:
@@ -92,24 +102,24 @@ _PROMPTS = {
 }
 
 if lang == "ru":
-    _LATEX_RULES = Translator(_LATEX_RULES)
-    _SYSTEM = Translator(_SYSTEM)
-    _CHECK_SYSTEM = Translator(_CHECK_SYSTEM)
-    _SYSTEM = Translator(_SYSTEM)
+    _LATEX_RULES = _translate_prompt(_LATEX_RULES)
+    _SYSTEM = _translate_prompt(_SYSTEM)
+    _CHECK_SYSTEM = _translate_prompt(_CHECK_SYSTEM)
+    _SYSTEM = _translate_prompt(_SYSTEM)
     _PROMPTS = {
-        'hint': lambda problem, answer: Translator(
+        'hint': lambda problem, answer: _translate_prompt(
             f"Official solution:\n{problem['response']}\n\n"
             f"Problem:\n{problem['question']}\n\n"
             f"Student's current attempt: {answer or '(none yet)'}\n\n"
             'Give a single helpful hint. Do not solve the problem.'
         ),
-        'steps': lambda problem, answer: Translator(
+        'steps': lambda problem, answer: _translate_prompt(
             f"Official solution:\n{problem['response']}\n\n"
             f"Problem:\n{problem['question']}\n\n"
             f"Student's current attempt: {answer or '(none yet)'}\n\n"
             'Walk through the solution step by step.'
         ),
-        'explain': lambda problem, answer: Translator(
+        'explain': lambda problem, answer: _translate_prompt(
             f"Problem:\n{problem['question']}\n\n"
             f"Official solution:\n{problem['response']}\n\n"
             'Explain this solution clearly, highlighting the key ideas and techniques used.'
@@ -143,14 +153,26 @@ def check_answer(problem: dict, user_answer: str) -> dict:
     if correct and correct == user_answer.strip():
         return {'verdict': 'CORRECT', 'text': 'Well done!'}
 
-    prompt = (
-        f"Problem:\n{problem['question']}\n\n"
-        f"Correct answer: {correct or '(see solution)'}\n\n"
-        f"<student_answer>{user_answer or '(empty)'}</student_answer>\n\n"
-        "Does the student's answer inside <student_answer> match the correct answer "
-        "(mathematically equivalent is fine)? "
-        "Briefly explain if wrong, then on the very last line write only CORRECT or INCORRECT."
-    )
+    if lang == "ru":
+        prompt = _translate_prompt(
+            f"Problem:\n{problem['question']}\n\n"
+            f"Correct answer: {correct or '(see solution)'}\n\n"
+            f"<student_answer>{user_answer or '(empty)'}</student_answer>\n\n"
+            "Does the student's answer inside <student_answer> match the correct answer "
+            "(mathematically equivalent is fine)? "
+            "Briefly explain if wrong, then on the very last line write only ") + "CORRECT or INCORRECT."
+    else:
+        prompt = (
+            f"Problem:\n{problem['question']}\n\n"
+            f"Correct answer: {correct or '(see solution)'}\n\n"
+            f"<student_answer>{user_answer or '(empty)'}</student_answer>\n\n"
+            "Does the student's answer inside <student_answer> match the correct answer "
+            "(mathematically equivalent is fine)? "
+            "Briefly explain if wrong, then on the very last line write only CORRECT or INCORRECT.")
+
+    print(prompt)
+    print(_CHECK_SYSTEM)
+
     text = _query(
         messages=[
             {'role': 'system', 'content': _CHECK_SYSTEM},

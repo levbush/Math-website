@@ -8,7 +8,7 @@ from data.ai import check_answer, get_ai_response, NoKeyError
 from collections import defaultdict
 import time
 
-from config import SUBJECTS, DB_PATH
+from config import SUBJECTS, DB_PATH, lang, translator
 
 _ai_last_call: dict[str, float] = defaultdict(float)
 AI_COOLDOWN = 15
@@ -73,7 +73,8 @@ def logout():
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html', username=current_user.username, stats=current_user.get_stats(), subjects=SUBJECTS)
+    return render_template('profile.html', username=current_user.username, stats=current_user.get_stats(), subjects=SUBJECTS,
+     lang=lang, trans=translator)
 
 
 @app.route('/problem', methods=['GET', 'POST'])

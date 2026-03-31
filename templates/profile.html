@@ -9,12 +9,20 @@
 <h1>{{ username }}</h1>
 
 <div class="card">
-  <div class="section-title">solved by subject</div>
+  {% if lang == "ru" %}
+    <div class="section-title">{{ trans.run('solved by subject') }}</div>
+  {% else %}
+    <div class="section-title">{{ 'solved by subject' }}</div>
+  {% endif %}
   <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-2 mb-2">
     {% for subject in subjects %}
     <div class="col">
       <div class="stat-cell">
-        <div class="stat-label">{{ subject }}</div>
+        {% if lang == "ru" %}
+          <div class="stat-label">{{ trans.run(subject) }}</div>
+        {% else %}
+          <div class="stat-label">{{ subject }}</div>
+        {% endif %}
         <div class="stat-value">{{ stats.get(subject, 0) }}</div>
       </div>
     </div>
