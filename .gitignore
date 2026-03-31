@@ -4,5 +4,7 @@ __pycache__
 .txt
 f.py
 .vscode
+.venv
+venv
 pool_cache.pkl
-re.py
+ru.py
