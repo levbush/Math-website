@@ -1,6 +1,7 @@
 import re
 import requests
 import os
+from config import Translator, lang
 
 MODEL = 'Qwen/Qwen2.5-72B-Instruct'
 API_URL = 'https://router.huggingface.co/v1/chat/completions'
@@ -89,6 +90,32 @@ _PROMPTS = {
         'Explain this solution clearly, highlighting the key ideas and techniques used.'
     ),
 }
+
+if lang == "ru":
+    _LATEX_RULES = Translator(_LATEX_RULES)
+    _SYSTEM = Translator(_SYSTEM)
+    _CHECK_SYSTEM = Translator(_CHECK_SYSTEM)
+    _SYSTEM = Translator(_SYSTEM)
+    _PROMPTS = {
+        'hint': lambda problem, answer: Translator(
+            f"Official solution:\n{problem['response']}\n\n"
+            f"Problem:\n{problem['question']}\n\n"
+            f"Student's current attempt: {answer or '(none yet)'}\n\n"
+            'Give a single helpful hint. Do not solve the problem.'
+        ),
+        'steps': lambda problem, answer: Translator(
+            f"Official solution:\n{problem['response']}\n\n"
+            f"Problem:\n{problem['question']}\n\n"
+            f"Student's current attempt: {answer or '(none yet)'}\n\n"
+            'Walk through the solution step by step.'
+        ),
+        'explain': lambda problem, answer: Translator(
+            f"Problem:\n{problem['question']}\n\n"
+            f"Official solution:\n{problem['response']}\n\n"
+            'Explain this solution clearly, highlighting the key ideas and techniques used.'
+        ),
+    }
+
 
 
 def _fix_latex(text: str) -> str:
