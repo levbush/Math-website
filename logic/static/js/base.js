@@ -6,3 +6,10 @@ function showToast(msg, duration = 5000) {
 }
 
 
+const btn = document.getElementById('lang');
+
+console.log(':( :( :( :( :( :( :( :(');
+
+btn.addEventListener('click', async () => {
+  console.log(':( :( :( :( :( :( :( :(');
+})
