@@ -3,30 +3,18 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from data.db_session import global_init
 from data.user import User
-from data.cache import start as start_cache, get_problem
+from data.cache import start as get_problem
 from data.ai import check_answer, get_ai_response, NoKeyError
 from collections import defaultdict
 import time
 
-from config import SUBJECTS, DB_PATH, lang, translator
+from config import SUBJECTS, lang, translator
 
 _ai_last_call: dict[str, float] = defaultdict(float)
 AI_COOLDOWN = 15
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'very_secret')
-
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-
-global_init(DB_PATH)
-start_cache()
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.get_by_id(int(user_id))
-
 
 @app.route('/')
 def index():
@@ -183,11 +171,3 @@ def problem_ai():
 
     except NoKeyError:
         return jsonify({'error': 'AI is not configured.'}), 503
-
-
-def main():
-    app.run(port=8080, host='127.0.0.1')
-
-
-if __name__ == '__main__':
-    main()
