@@ -1,8 +1,6 @@
 import dotenv
-from eng_to_ru import Translator
 
 
-translator = Translator()
 
 dotenv.load_dotenv()
 
@@ -21,6 +19,12 @@ SUBJECTS = [
     'Trigonometry',
     'Calculus',
     'Other'
+]
+
+ACHIEVEMENTS = [
+    "10 tasks in a row without errors",
+    "100 solved tasks",
+    "topic completion"
 ]
 
 lang = "ru"

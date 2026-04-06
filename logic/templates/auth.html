@@ -14,9 +14,9 @@
 {% block content %}
 <div class="auth-wrap">
   {% if lang == 'ru' %}
-    <h1>{% if mode == 'register' %}{{ trans.run('Создать аккаунт') }}{% else %}{{ trans.run('С возвращением') }}{% endif %}</h1>
+    <h1>{% if mode == 'register' %}Создать аккаунт{% else %}С возвращением{% endif %}</h1>
     <p class="text-muted mb-4" style="font-size:13px">
-      {% if mode == 'register' %}{{ trans.run('начните решать задачи') }}{% else %}{{ trans.run('войдите, чтобы продолжить') }}{% endif %}
+      {% if mode == 'register' %}начните решать задачи{% else %}войдите, чтобы продолжить{% endif %}
     </p>
   {% else %}
     <h1>{% if mode == 'register' %}Create account{% else %}Welcome back{% endif %}</h1>
@@ -28,14 +28,14 @@
   <div class="card">
     <form method="POST">
       {% if lang == 'ru' %}
-        <label class="form-label" for="username">{{ trans.run('имя пользователя') }}</label>
+        <label class="form-label" for="username">имя пользователя</label>
       {% else %}
         <label class="form-label" for="username">username</label>
       {% endif %}
       <input class="form-control" type="text" id="username" name="username" autocomplete="username" autofocus>
 
       {% if lang == 'ru' %}
-        <label class="form-label" for="password">{{ trans.run('пароль') }}</label>
+        <label class="form-label" for="password">пароль</label>
       {% else %}
         <label class="form-label" for="password">password</label>
       {% endif %}
@@ -45,7 +45,7 @@
       <div class="d-flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">
           {% if lang == 'ru' %}
-            {{ trans.run('зарегистрироваться') if mode == 'register' else trans.run('войти') }}
+            {{ 'зарегистрироваться' if mode == 'register' else 'войти' }}
           {% else %}
             {{ 'register' if mode == 'register' else 'login' }}
           {% endif %}
@@ -57,9 +57,9 @@
   <div class="auth-switch">
     {% if lang == 'ru' %}
       {% if mode == 'register' %}
-        {{ trans.run('уже есть аккаунт?') }} <a href="{{ url_for('login') }}">{{ trans.run('войти') }}</a>
+        уже есть аккаунт? <a href="{{ url_for('login') }}">войти</a>
       {% else %}
-        {{ trans.run('нет аккаунта?') }} <a href="{{ url_for('register') }}">{{ trans.run('зарегистрироваться') }}</a>
+        нет аккаунта? <a href="{{ url_for('register') }}">зарегистрироваться</a>
       {% endif %}
     {% else %}
       {% if mode == 'register' %}

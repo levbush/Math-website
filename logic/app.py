@@ -7,8 +7,9 @@ from data.cache import start as get_problem
 from data.ai import check_answer, get_ai_response, NoKeyError
 from collections import defaultdict
 import time
+from trans_ru import ACHIEVEMENTS_RU, SUBJECTS_RU
 
-from config import SUBJECTS, translator, lang
+from config import SUBJECTS, lang
 
 _ai_last_call: dict[str, float] = defaultdict(float)
 AI_COOLDOWN = 15
@@ -67,7 +68,7 @@ def profile():
         session["lang"] = lang
     print(session["lang"])
     return render_template('profile.html', username=current_user.username, stats=current_user.get_stats(), subjects=SUBJECTS,
-                         lang=session["lang"], trans=translator, achievements=current_user.get_achievements())
+                         lang=session["lang"], trans=[SUBJECTS_RU, ACHIEVEMENTS_RU], achievements=current_user.get_achievements())
 
 @app.route('/set_language', methods=['POST'])
 @login_required

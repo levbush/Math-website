@@ -7,11 +7,7 @@ import tempfile
 import os
 from datetime import datetime
 from huggingface_hub import hf_hub_download, list_repo_files
-from config import SUBJECTS, repo_id, repo_type, REFRESH_INTERVAL, CACHE_FILE, translator
-from eng_to_ru import Translator
-
-if 'translator' not in locals():
-    translator = Translator()
+from config import SUBJECTS, repo_id, repo_type, REFRESH_INTERVAL, CACHE_FILE
 
 _lock = threading.Lock()
 _pool: dict[tuple, list] = {}
@@ -24,20 +20,6 @@ MAX_PROBLEMS_PER_KEY = 1000
 
 def _is_valid(question: str) -> bool:
     return not any(phrase in question for phrase in BLACKLIST)
-
-
-def _translate_problem(problem: dict) -> dict:
-    try:
-        original_question = problem['question']
-        translated_question = translator.run(original_question)
-        
-        translated_problem = problem.copy()
-        translated_problem['question'] = translated_question
-        translated_problem['original_question'] = original_question
-        
-        return translated_problem
-    except Exception:
-        return problem
 
 
 def _load_file(filepath: str, exclude_ids: set) -> list:
@@ -169,7 +151,7 @@ def start():
     t.start()
 
 
-def get_problem(subject: str, difficulty: str, solved_ids: set, langu) -> dict | None:
+def get_problem(subject: str, difficulty: str, solved_ids: set, lang: str) -> dict | None:
     with _lock:
         if difficulty == 'any':
             candidates = [
@@ -188,9 +170,8 @@ def get_problem(subject: str, difficulty: str, solved_ids: set, langu) -> dict |
 
     problem = random.choice(unsolved)
     
-    from flask import session
-    
-    if langu == 'ru' and 'original_question' not in problem:
-        problem = _translate_problem(problem)
+    if lang == 'ru' and 'original_question' not in problem:
+        from flask import session
+        pass
         
     return problem

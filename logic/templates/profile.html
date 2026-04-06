@@ -18,11 +18,13 @@
     {% for subject in subjects %}
     <div class="col">
       <div class="stat-cell">
-        {% if lang == "ru" %}
-          <div class="stat-label">{{ trans.run(subject) if trans else subject }}</div>
-        {% else %}
-          <div class="stat-label">{{ subject }}</div>
-        {% endif %}
+        <div class="stat-label">
+          {% if lang == "ru" %}
+            {{ trans[0][subject] }}
+          {% else %}
+            {{ subject }}
+          {% endif %}
+        </div>
         <div class="stat-value">{{ stats.get(subject, 0) }}</div>
       </div>
     </div>
@@ -48,7 +50,6 @@
   </div>
 </div>
 
-<!-- Отдельная карточка для достижений -->
 <div class="card">
   {% if lang == "ru" %}
     <div class="section-title">Достижения</div>
@@ -61,7 +62,7 @@
       <div class="stat-cell {% if achieved %}achievement-unlocked{% else %}achievement-locked{% endif %}">
         <div class="stat-label">
           {% if lang == "ru" %}
-            {{ trans.run(achievement) if trans else achievement }}
+            {{ trans[1][achievement] }}
           {% else %}
             {{ achievement }}
           {% endif %}
@@ -90,7 +91,11 @@
     <select class="form-select" id="subject" name="subject">
       {% for s in subjects %}
       <option value="{{ s }}">
-        {% if lang == "ru" %}{{ trans.run(s) if trans else s }}{% else %}{{ s }}{% endif %}
+        {% if lang == "ru" %}
+          {{ trans[0][s] }}
+        {% else %}
+          {{ s }}
+        {% endif %}
       </option>
       {% endfor %}
     </select>
