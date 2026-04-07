@@ -1,17 +1,17 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from data.db_session import global_init
+from flask_login import login_user, logout_user, login_required, current_user
 from data.user import User
 from data.cache import get_problem, start as start_cache
 from data.ai import check_answer, get_ai_response, NoKeyError
 from collections import defaultdict
 import time
 from trans_ru import ACHIEVEMENTS_RU, SUBJECTS_RU
-
 from config import SUBJECTS, lang
 
 start_cache()
+
+session.setdefault('correct_in_a_row', 0)
 
 _ai_last_call: dict[str, float] = defaultdict(float)
 AI_COOLDOWN = 15
@@ -118,10 +118,12 @@ def problem_more():
         return redirect(url_for('profile'))
 
     if session.pop('answer_verified', None):
+        session['correct_in_a_row'] += 1
         p = session.get('current_problem')
         if p:
             current_user.mark_solved(p['id'], p['subject'], p['difficulty'])
-
+    else:
+        session['correct_in_a_row'] = 0
     p = get_problem(subject, difficulty, current_user.get_solved(), session.get("lang", "en"))
     if not p:
         flash('No unsolved problems found.')
@@ -142,6 +144,7 @@ def problem_confirm():
     current_user.mark_solved(p['id'], p['subject'], p['difficulty'])
     session.pop('current_problem', None)
     session.pop('answer_verified', None)
+    session['correct_in_a_row'] += 1
     flash('Problem marked as solved!')
     return redirect(url_for('profile'))
 
