@@ -108,15 +108,12 @@ def _fix_latex(text: str) -> str:
 
 
 def _parse_verdict(text: str) -> dict:
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
-    for line in reversed(lines):
-        clean = re.sub(r'[^a-zA-ZА-Яа-я]', '', line).upper()
-        if clean == 'CORRECT':
-            body = text[:text.rfind(line)].strip()
-            return {'verdict': 'CORRECT', 'text': body or 'Correct!'}
-        if clean == 'INCORRECT':
-            body = text[:text.rfind(line)].strip()
-            return {'verdict': 'INCORRECT', 'text': body or 'Incorrect.'}
+    if 'INCORRECT' in text and 'CORRECT' in text:
+        return {'verdict': 'UNKNOWN', 'text': text}
+    elif 'CORRECT' in text:
+        return {'verdict': 'CORRECT', 'text': text}
+    elif 'INCORRECT' in text:
+        return {'verdict': 'INCORRECT', 'text': text}
     return {'verdict': 'UNKNOWN', 'text': text}
 
 
