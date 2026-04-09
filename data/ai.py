@@ -133,7 +133,7 @@ def check_answer(problem: dict, user_answer: str) -> dict:
             f"<student_answer>{user_answer or '(пусто)'}</student_answer>\n\n"
             "Совпадает ли ответ студента внутри <student_answer> с правильным ответом "
             "(математическая эквивалентность допустима)? "
-            "Кратко объясните, если неверно, затем на последней строке напишите только CORRECT или INCORRECT."
+            "Кратко объясните, если неверно, не разглашая правильный ответ, затем на последней строке напишите только CORRECT или INCORRECT."
         )
     else:
         prompt = (
@@ -142,7 +142,7 @@ def check_answer(problem: dict, user_answer: str) -> dict:
             f"<student_answer>{user_answer or '(empty)'}</student_answer>\n\n"
             "Does the student's answer inside <student_answer> match the correct answer "
             "(mathematically equivalent is fine)? "
-            "Briefly explain if wrong, then on the very last line write only CORRECT or INCORRECT."
+            "Briefly explain if wrong. DO NOT say the correct answer. Then on the very last line write only CORRECT or INCORRECT."
         )
     
     text = _query(
@@ -157,7 +157,8 @@ def check_answer(problem: dict, user_answer: str) -> dict:
     if not text:
         return {'verdict': 'ERROR', 'text': 'AI check failed.'}
     
-    return _parse_verdict(_fix_latex(text))
+    # return _parse_verdict(_fix_latex(text))
+    return _parse_verdict(text)
 
 
 def get_ai_response(problem: dict, mode: str, user_answer: str) -> str:

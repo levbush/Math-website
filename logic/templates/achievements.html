@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}{% if lang == "ru" %}Достижения - Mather{% else %}Achievements - Mather{% endif %}{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+  <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary btn-sm">← {% if lang == "ru" %}Профиль{% else %}Profile{% endif %}</a>
+  <h1 class="mb-0">{% if lang == "ru" %}Достижения{% else %}Achievements{% endif %}</h1>
+</div>
+
+{% set count = achievements.values() | select | list | length %}
+{% set total = achievements | length %}
+<div class="achievements-progress-card card mb-3">
+  <div class="achievements-progress-header">
+    <span>{% if lang == "ru" %}{{ count }} из {{ total }} разблокировано{% else %}{{ count }} of {{ total }} unlocked{% endif %}</span>
+    <span class="achievements-progress-pct">{{ (count / total * 100) | int }}%</span>
+  </div>
+  <div class="achievements-progress-bar-track">
+    <div class="achievements-progress-bar-fill" style="width: {{ (count / total * 100) | int }}%"></div>
+  </div>
+</div>
+
+<div class="row row-cols-1 row-cols-sm-2 g-3">
+  {% for achievement, achieved in achievements.items() %}
+  <div class="col">
+    <div class="achievement-card {% if achieved %}achievement-unlocked{% else %}achievement-locked{% endif %}">
+      <div class="achievement-card-icon">{% if achieved %}🏆{% else %}🔒{% endif %}</div>
+      <div class="achievement-card-body">
+        <div class="achievement-card-name">
+          {% if lang == "ru" %}{{ trans[1][achievement] }}{% else %}{{ achievement }}{% endif %}
+        </div>
+        <div class="achievement-card-status">
+          {% if achieved %}
+            {% if lang == "ru" %}Разблокировано{% else %}Unlocked{% endif %}
+          {% else %}
+            {% if lang == "ru" %}Заблокировано{% else %}Locked{% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

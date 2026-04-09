@@ -7,7 +7,6 @@ from data.ai import check_answer, get_ai_response, NoKeyError
 from collections import defaultdict
 import time
 from trans_ru import ACHIEVEMENTS_RU, SUBJECTS_RU
-
 from config import SUBJECTS
 
 start_cache()
@@ -59,9 +58,21 @@ def logout():
 @app.route('/profile')
 @login_required
 def profile():
-    print(current_user.get_lang())
+    if session.pop('answer_verified', None):
+        session['correct_in_a_row'] = session.get('correct_in_a_row', 0) + 1
+        p = session.get('current_problem')
+        if p:
+            current_user.mark_solved(p['id'], p['subject'], p['difficulty'])
+    current_user.update_achievements(current_user, session)
     return render_template('profile.html', username=current_user.username, stats=current_user.get_stats(), subjects=SUBJECTS,
-                         lang=current_user.get_lang(), trans=[SUBJECTS_RU, ACHIEVEMENTS_RU], achievements=current_user.get_achievements())
+                        lang=current_user.get_lang(), trans=[SUBJECTS_RU, ACHIEVEMENTS_RU], achievements=current_user.get_achievements())
+
+@app.route('/achievements')
+@login_required
+def achievements():
+    return render_template('achievements.html', username=current_user.username,
+                           lang=current_user.get_lang(), trans=[SUBJECTS_RU, ACHIEVEMENTS_RU],
+                           achievements=current_user.get_achievements())
 
 @app.route('/set_language', methods=['POST'])
 @login_required
@@ -100,30 +111,31 @@ def problem():
     print(p)
     return render_template('problem.html', problem=p, lang=current_user.get_lang())
 
-@app.route('/problem/more')
-@login_required
-def problem_more():
-    subject = session.get('problem_subject')
-    difficulty = session.get('problem_difficulty')
-    if not subject or not difficulty:
-        flash('No previous problem context.')
-        return redirect(url_for('profile'))
+# @app.route('/problem/more')
+# @login_required
+# def problem_more():
+#     subject = session.get('problem_subject')
+#     difficulty = session.get('problem_difficulty')
+#     if not subject or not difficulty:
+#         flash('No previous problem context.')
+#         return redirect(url_for('profile'))
 
-    if session.pop('answer_verified', None):
-        session['correct_in_a_row'] = session.get('correct_in_a_row', 0) + 1
-        p = session.get('current_problem')
-        if p:
-            current_user.mark_solved(p['id'], p['subject'], p['difficulty'])
+#     if session.pop('answer_verified', None):
+#         session['correct_in_a_row'] = session.get('correct_in_a_row', 0) + 1
+#         p = session.pop('current_problem', None)
+#         if p:
+#             current_user.mark_solved(p['id'], p['subject'], p['difficulty'])
+#             current_user.update_achievements(current_user, session)
 
-    else:
-        session['correct_in_a_row'] = 0
-    p = get_problem(subject, difficulty, current_user.get_solved(), current_user.get_lang())
-    if not p:
-        flash('No unsolved problems found.')
-        return redirect(url_for('profile'))
+#     else:
+#         session['correct_in_a_row'] = 0
+#     p = get_problem(subject, difficulty, current_user.get_solved(), current_user.get_lang())
+#     if not p:
+#         flash('No unsolved problems found.')
+#         return redirect(url_for('profile'))
 
-    session['current_problem'] = p
-    return redirect(url_for('problem'))
+#     session['current_problem'] = p
+#     return redirect(url_for('problem'))
 
 @app.route('/problem/confirm', methods=['POST'])
 @login_required
@@ -133,6 +145,7 @@ def problem_confirm():
         return redirect(url_for('profile'))
     if not session.get('answer_verified'):
         flash('You must verify your answer before marking as solved.')
+        session['correct_in_a_row'] = 0
         return redirect(url_for('problem'))
     current_user.mark_solved(p['id'], p['subject'], p['difficulty'])
     session.pop('current_problem', None)

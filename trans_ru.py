@@ -1,3 +1,5 @@
+from logic.achievements import ACHIEVEMENTS
+
 SUBJECTS_RU = {
     'Arithmetic': 'Арифметика',
     'Algebra': 'Алгебра',
@@ -13,11 +15,27 @@ SUBJECTS_RU = {
     'Other': 'Другое'
 }
 
-ACHIEVEMENTS_RU = {
-    "10 tasks in a row without errors": "10 задач подряд без ошибок",
-    "100 solved tasks": "100 решённых задач",
-}
+ACHIEVEMENTS_RU = [
+    "5 решённых задач",
+    "10 решённых задач",
+    '50 решённых задач',
+    '100 решённых задач',
+    '1000 решённых задач',
 
+    '2 правильные попытки подряд',
+    '5 правильных попыток подряд',
+    '10 правильных попыток подряд',
+    '50 правильных попыток подряд',
+    '100 правильных попыток подряд',
+] + \
+sum(
+	[
+		[
+			f"{i} решённых задач: {subject}" for i in (5, 10, 50, 100, 1000)
+		] for subject in SUBJECTS_RU.values()
+	]
+	, start=[]
+)
+ACHIEVEMENTS_RU.append("Выполнить все достижения!")
 
-# eng_to_ru худшая бибилиотека для перевода,
-#  она очень сильно нагружает систему
+ACHIEVEMENTS_RU = dict(zip([ac.name for ac in ACHIEVEMENTS], ACHIEVEMENTS_RU))

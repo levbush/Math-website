@@ -50,31 +50,26 @@
   </div>
 </div>
 
-<div class="card">
-  {% if lang == "ru" %}
-    <div class="section-title">Достижения</div>
-  {% else %}
-    <div class="section-title">Achievements</div>
-  {% endif %}
-  <div class="row row-cols-1 row-cols-sm-2 g-2">
-    {% for achievement, achieved in achievements.items() %}
-    <div class="col">
-      <div class="stat-cell {% if achieved %}achievement-unlocked{% else %}achievement-locked{% endif %}">
-        <div class="stat-label">
-          {% if lang == "ru" %}
-            {{ trans[1][achievement] }}
-          {% else %}
-            {{ achievement }}
-          {% endif %}
-        </div>
-        <div class="stat-value">
-          {% if achieved %}✓{% else %}🔒{% endif %}
-        </div>
+<a href="{{ url_for('achievements') }}" class="achievements-banner">
+  <div class="achievements-banner-left">
+    <span class="achievements-banner-icon">🏆</span>
+    <div>
+      <div class="achievements-banner-title">
+        {% if lang == "ru" %}Достижения{% else %}Achievements{% endif %}
+      </div>
+      <div class="achievements-banner-sub">
+        {% set count = achievements.values() | select | list | length %}
+        {% set total = achievements | length %}
+        {% if lang == "ru" %}
+          {{ count }} из {{ total }} разблокировано
+        {% else %}
+          {{ count }} of {{ total }} unlocked
+        {% endif %}
       </div>
     </div>
-    {% endfor %}
   </div>
-</div>
+  <span class="achievements-banner-arrow">→</span>
+</a>
 
 <div class="card">
   {% if lang == "ru" %}

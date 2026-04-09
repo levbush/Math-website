@@ -20,13 +20,7 @@ SUBJECTS = [
     'Other'
 ]
 
-ACHIEVEMENTS = [
-    "10 tasks in a row without errors",
-    "100 solved tasks",
-    "topic completion"
-]
-
-lang = "ru"
+lang = "en"
 
 repo_id = 'levbush/math_tasks_split'
 repo_type = 'dataset'
@@ -35,3 +29,8 @@ FILE_LENGTH = 1000
 
 REFRESH_INTERVAL = 15 * 60
 CACHE_FILE = 'pool_cache.pkl'
+
+
+def _default_stats() -> dict[str, int]:
+    return {key: 0 for key in SUBJECTS + [str(d) for d in range(1, 11)]}
+

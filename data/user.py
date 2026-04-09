@@ -2,18 +2,9 @@ import sqlalchemy as sa
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from data.db_session import SqlAlchemyBase, create_session
-from config import SUBJECTS, lang
+from config import lang, _default_stats
+from logic.achievements import _default_achievements, ACHIEVEMENTS, AchievementType, SUBJECT, SUBJECTS, Achievement
 from typing import Optional
-
-
-def _default_stats() -> dict[str, int]:
-    return {key: 0 for key in SUBJECTS + [str(d) for d in range(1, 11)]}
-
-def _default_achievements() -> dict[str, bool]:
-    return {
-        "10 tasks in a row without errors": False,
-        "100 solved tasks": False,
-    }
 
 
 class User(SqlAlchemyBase, UserMixin):
@@ -103,3 +94,37 @@ class User(SqlAlchemyBase, UserMixin):
         with create_session() as s:
             user = s.get(User, self.id)
             return user.achievements
+        
+    def update_achievements(self, user, web_session):
+        
+        with create_session() as s:
+            user = s.merge(user)
+
+            solved_count = sum(user.stats[subject] for subject in SUBJECTS)
+            generic_subject = SUBJECT(None)
+            def mark(achievement: Achievement, true=True):
+                user.achievements[achievement.name] = true
+            for achievement in ACHIEVEMENTS:
+                if achievement.type == AchievementType.ultimate:
+                    if achievement.condition(tuple(user.achievements.values()).count(True), achievement.condition_reference_point):
+                        mark(achievement)
+                    else:
+                        mark(achievement, False)
+                    continue
+                if user.achievements[achievement.name]:
+                    continue
+                match achievement.type:
+                    case AchievementType.solved:
+                        print(achievement, achievement.condition(solved_count, achievement.condition_reference_point))
+                        if achievement.condition(solved_count, achievement.condition_reference_point):
+                            mark(achievement)
+                            print(user.achievements)
+
+                    case AchievementType.correct_streak:
+                        if achievement.condition(web_session.get('correct_in_a_row', 0), achievement.condition_reference_point):
+                            mark(achievement)
+                    case generic_subject:
+                        if achievement.condition(user.stats[achievement.type.name], achievement.condition_reference_point):
+                            mark(achievement)
+            s.commit()
+            s.refresh(user)
