@@ -12,7 +12,7 @@ function changeAvatarColor(color) {
     const avatarEl = document.getElementById('avatar');
     avatarEl.style.backgroundColor = color;
     avatarEl.className = 'avatar';
-    avatarEl.innerHTML = '{{ current_user.username[:2].upper() }}';
+    // avatarEl.innerHTML = '{{ current_user.username[:2].upper() }}';
 
     fetch('/user/update_avatar_color', {
         method: 'POST',
@@ -22,6 +22,7 @@ function changeAvatarColor(color) {
         if (data.status === 'ok') {
             fetch('/user/clear_avatar', {method: 'POST'});
             hideColorPalette();
+			window.location.reload();
         }
     });
 }
@@ -39,6 +40,7 @@ function uploadAvatar(input) {
                 avatarEl.className = 'avatar avatar-img';
                 avatarEl.innerHTML = '<img id="avatar-img-el" src="' + data.data_url + '" alt="avatar">';
                 hideColorPalette();
+                window.location.reload();
             } else {
                 alert(data.error || 'Upload failed.');
             }
