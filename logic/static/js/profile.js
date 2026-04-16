@@ -39,7 +39,6 @@ function uploadAvatar(input) {
                 avatarEl.className = 'avatar avatar-img';
                 avatarEl.innerHTML = '<img id="avatar-img-el" src="' + data.data_url + '" alt="avatar">';
                 hideColorPalette();
-                window.location.reload();
             } else {
                 alert(data.error || 'Upload failed.');
             }
