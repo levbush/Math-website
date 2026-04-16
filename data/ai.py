@@ -1,8 +1,6 @@
 import re
 import requests
 import os
-from flask import session
-from flask_login import current_user
 
 MODEL = 'Qwen/Qwen2.5-72B-Instruct'
 API_URL = 'https://router.huggingface.co/v1/chat/completions'
@@ -91,13 +89,13 @@ _CHECK_SYSTEM = (
 )
 
 
-def _get_system_prompt() -> str:
-    if session and current_user.get_lang() == "ru":
+def _get_system_prompt(lang: str) -> str:
+    if lang == "ru":
         return _SYSTEM_RU
     return _SYSTEM
 
-def _get_check_system_prompt() -> str:
-    if session and current_user.get_lang() == "ru":
+def _get_check_system_prompt(lang: str) -> str:
+    if lang == "ru":
         return _CHECK_SYSTEM_RU
     return _CHECK_SYSTEM
 
@@ -109,22 +107,22 @@ def _fix_latex(text: str) -> str:
 
 
 def _parse_verdict(text: str) -> dict:
-    if 'INCORRECT' in text and 'CORRECT' in text:
+    if 'INCORRECT' in text and 'CORRECT' in text.replace('INCORRECT', ''):
         return {'verdict': 'UNKNOWN', 'text': text}
-    elif 'CORRECT' in text:
-        return {'verdict': 'CORRECT', 'text': text}
     elif 'INCORRECT' in text:
         return {'verdict': 'INCORRECT', 'text': text}
+    elif 'CORRECT' in text:
+        return {'verdict': 'CORRECT', 'text': text}
     return {'verdict': 'UNKNOWN', 'text': text}
 
 
-def check_answer(problem: dict, user_answer: str) -> dict:
+def check_answer(problem: dict, user_answer: str, lang: str = "en") -> dict:
     correct = (problem.get('extracted_answer') or '').strip()
     
     if correct and correct == user_answer.strip():
         return {'verdict': 'CORRECT', 'text': 'Well done!'}
     
-    current_lang = current_user.get_lang() 
+    current_lang = lang
     
     if current_lang == "ru":
         prompt = (
@@ -147,7 +145,7 @@ def check_answer(problem: dict, user_answer: str) -> dict:
     
     text = _query(
         messages=[
-            {'role': 'system', 'content': _get_check_system_prompt()},
+            {'role': 'system', 'content': _get_check_system_prompt(lang)},
             {'role': 'user', 'content': prompt},
         ],
         max_tokens=300,
@@ -157,12 +155,11 @@ def check_answer(problem: dict, user_answer: str) -> dict:
     if not text:
         return {'verdict': 'ERROR', 'text': 'AI check failed.'}
     
-    # return _parse_verdict(_fix_latex(text))
     return _parse_verdict(text)
 
 
-def get_ai_response(problem: dict, mode: str, user_answer: str) -> str:
-    current_lang = current_user.get_lang()
+def get_ai_response(problem: dict, mode: str, user_answer: str, lang: str = "en") -> str:
+    current_lang = lang
     
     if mode == 'hint':
         if current_lang == "ru":
@@ -212,7 +209,7 @@ def get_ai_response(problem: dict, mode: str, user_answer: str) -> str:
     
     text = _query(
         messages=[
-            {'role': 'system', 'content': _get_system_prompt()},
+            {'role': 'system', 'content': _get_system_prompt(lang)},
             {'role': 'user', 'content': prompt},
         ],
     )

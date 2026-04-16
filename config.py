@@ -27,7 +27,7 @@ repo_type = 'dataset'
 
 FILE_LENGTH = 1000
 
-REFRESH_INTERVAL = 15 * 60
+REFRESH_INTERVAL = 30 * 60
 CACHE_FILE = 'pool_cache.pkl'
 
 

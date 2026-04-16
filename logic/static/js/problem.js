@@ -39,8 +39,6 @@ buttons.forEach(btn => {
   btn.addEventListener('click', async () => {
     const mode = btn.dataset.mode;
     const answer = document.getElementById('answer').value.trim();
-    
-    console.log('Button clicked:', mode, 'Answer length:', answer.length);
 
     buttons.forEach(b => { b.disabled = true; b.classList.remove('active'); });
     btn.classList.add('active');
@@ -57,11 +55,9 @@ buttons.forEach(btn => {
 
     try {
       const res = await fetch('/problem/ai', { method: 'POST', body });
-      const data = await res.json();
-      
-      console.log('Response:', res.status, data);
 
       if (res.status === 429) {
+        const data = await res.json();
         const mins = Math.ceil(data.wait / 60);
         if (panel) panel.style.display = 'none';
         if (typeof showToast === 'function') {
@@ -70,8 +66,25 @@ buttons.forEach(btn => {
         return;
       }
 
-      if (!res.ok || data.error) {
+      if (!res.ok) {
+        const data = await res.json();
         if (responseEl) responseEl.textContent = data.error || 'Request failed.';
+        return;
+      }
+
+      const { job_id } = await res.json();
+
+      const data = await (async () => {
+        while (true) {
+          await new Promise(r => setTimeout(r, 600));
+          const poll = await fetch(`/problem/ai/poll/${job_id}`);
+          if (poll.status === 202) continue;
+          return await poll.json();
+        }
+      })();
+
+      if (data.error) {
+        if (responseEl) responseEl.textContent = data.error;
         return;
       }
 
@@ -88,7 +101,6 @@ buttons.forEach(btn => {
       }
 
     } catch (e) {
-      console.error('Error:', e);
       if (responseEl) responseEl.textContent = 'Request failed: ' + e.message;
     } finally {
       buttons.forEach(b => { b.disabled = false; });

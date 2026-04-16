@@ -1,6 +1,8 @@
 import os
 import time
+import uuid
 import base64
+from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from data.user import User
@@ -14,6 +16,8 @@ from data.db_session import create_session
 start_cache()
 
 _ai_last_call: dict[str, float] = defaultdict(float)
+_executor = ThreadPoolExecutor(max_workers=8)
+_jobs: dict[str, dict] = {}
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'very_secret')
@@ -112,31 +116,6 @@ def problem():
     print(p)
     return render_template('problem.html', problem=p, lang=current_user.get_lang())
 
-# @app.route('/problem/more')
-# @login_required
-# def problem_more():
-#     subject = session.get('problem_subject')
-#     difficulty = session.get('problem_difficulty')
-#     if not subject or not difficulty:
-#         flash('No previous problem context.')
-#         return redirect(url_for('profile'))
-
-#     if session.pop('answer_verified', None):
-#         session['correct_in_a_row'] = session.get('correct_in_a_row', 0) + 1
-#         p = session.pop('current_problem', None)
-#         if p:
-#             current_user.mark_solved(p['id'], p['subject'], p['difficulty'])
-#             current_user.update_achievements(current_user, session)
-
-#     else:
-#         session['correct_in_a_row'] = 0
-#     p = get_problem(subject, difficulty, current_user.get_solved(), current_user.get_lang())
-#     if not p:
-#         flash('No unsolved problems found.')
-#         return redirect(url_for('profile'))
-
-#     session['current_problem'] = p
-#     return redirect(url_for('problem'))
 
 @app.route('/problem/confirm', methods=['POST'])
 @login_required
@@ -165,7 +144,7 @@ def problem_ai():
     mode = request.form.get('mode')
     user_answer = request.form.get('answer', '').strip()
     if not user_answer and mode == 'check':
-        return
+        return jsonify({'error': 'No answer provided.'}), 400
 
     if mode not in ('check', 'hint', 'steps', 'explain'):
         return jsonify({'error': 'Invalid mode.'}), 400
@@ -179,18 +158,47 @@ def problem_ai():
 
     _ai_last_call[uid] = now
 
-    try:
-        if mode == 'check':
-            result = check_answer(p, user_answer)
-            if result['verdict'] == 'CORRECT':
-                session['answer_verified'] = True
-            return jsonify(result)
+    job_id = str(uuid.uuid4())
+    _jobs[job_id] = {'status': 'pending'}
 
-        text = get_ai_response(p, mode, user_answer)
-        return jsonify({'text': text})
+    user_lang = current_user.get_lang()
 
-    except NoKeyError:
-        return jsonify({'error': 'AI is not configured.'}), 503
+    def run(job_id, p, mode, user_answer, user_lang, uid):
+        try:
+            if mode == 'check':
+                result = check_answer(p, user_answer, user_lang)
+                if result['verdict'] == 'CORRECT':
+                    _jobs[job_id] = {'status': 'done', 'verdict': 'CORRECT', 'text': result['text']}
+                else:
+                    _jobs[job_id] = {'status': 'done', 'verdict': result['verdict'], 'text': result['text']}
+            else:
+                text = get_ai_response(p, mode, user_answer, user_lang)
+                _jobs[job_id] = {'status': 'done', 'text': text}
+        except NoKeyError:
+            _jobs[job_id] = {'status': 'error', 'error': 'AI is not configured.'}
+        except Exception as e:
+            _jobs[job_id] = {'status': 'error', 'error': str(e)}
+
+    _executor.submit(run, job_id, p, mode, user_answer, user_lang, uid)
+    return jsonify({'job_id': job_id}), 202
+
+
+@app.route('/problem/ai/poll/<job_id>', methods=['GET'])
+@login_required
+def problem_ai_poll(job_id):
+    job = _jobs.get(job_id)
+    if job is None:
+        return jsonify({'error': 'Unknown job.'}), 404
+    if job['status'] == 'pending':
+        return jsonify({'status': 'pending'}), 202
+    if job['status'] == 'error':
+        _jobs.pop(job_id, None)
+        return jsonify({'error': job['error']}), 503
+    if job['status'] == 'done' and job.get('verdict') == 'CORRECT':
+        session['answer_verified'] = True
+    result = dict(job)
+    _jobs.pop(job_id, None)
+    return jsonify(result)
 
 @app.route('/user/avatar')
 @login_required
